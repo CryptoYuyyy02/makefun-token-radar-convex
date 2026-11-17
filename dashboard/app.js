@@ -301,7 +301,15 @@
         node('br', null),
         'convexGrowth: if g >= 0 then 1 + sqrt(g) x ' + m.growth_weight + ' x 1.35; else 1 + g x ' + m.growth_weight + ' x (1 + |g|).  g = clamp(change_7d, ' + m.growth_floor + ', ' + m.growth_cap + ') / 100.'
       ),
-      node('p', { class: 'sub', text: 'Growth is convex: sustained expansion compounds, while contraction is discounted harder, so a shrinking protocol cannot coast on a large TVL. TVL and seven-day growth come from the snapshot. Age is the time since the protocol was first listed, the best record of how long it has run with no token; an unlisted age uses ' + m.unknown_age_days + ' days. The early radar is every pre-token protocol below the watchlist floor, by TVL, and the live-token protocols are set aside with their market caps shown.' })
+      node('p', { class: 'sub', text: 'Growth is convex: sustained expansion compounds, while contraction is discounted harder, so a shrinking protocol cannot coast on a large TVL. TVL and seven-day growth come from the snapshot. Age is the time since the protocol was first listed, the best record of how long it has run with no token; an unlisted age uses ' + m.unknown_age_days + ' days. The early radar is every pre-token protocol below the watchlist floor, by TVL, and the live-token protocols are set aside with their market caps shown.' }),
+      node('h3', { text: 'Top 5 — the arithmetic behind each value' }),
+      node('div', { class: 'equation' }, radar.rows.slice(0, 5).map(function (r) {
+        return node('div', null,
+          node('span', { text: '#' + r.rank + ' ' + r.name + '  ·  TVL ' + dollars(r.tvl_usd) + ' × growth ' + r.growth_multiplier + ' × maturity ' + r.maturity_multiplier }),
+          node('b', { class: 'num', text: '= ' + dollars(r.implied_value_usd) })
+        );
+      })),
+      node('p', { class: 'sub', text: 'Each line is the same three inputs read straight from the snapshot; the implied value is their product, rounded. No name is typed into the ranking — change a TVL or a growth figure in the snapshot and the row moves on its own.' })
     );
   }
 
