@@ -292,24 +292,31 @@
   }
 
   function modelPanel() {
-    var m = radar.model;
+    var m = radar.model, v = radar.validation || {};
     return node('section', { class: 'panel model' },
-      node('h2', { text: 'How implied value is computed' }),
-      node('p', { class: 'sub', text: 'Every row is scored by one function of the snapshot figures. No protocol name is special-cased, and no row is hand-picked.' }),
+      node('h2', { text: 'The model: comparables, fitted and tested' }),
+      node('p', { class: 'sub', text: 'Implied value is not guessed. It is fitted on the ' + v.comparables + ' protocols in this very snapshot that already have a trading token, then applied to those that have none. No name is typed into the ranking.' }),
       node('div', { class: 'formula' },
-        'implied = round( tvl_usd x ' + m.base_multiple + ' x convexGrowth(change_7d) x (' + m.maturity_floor + ' + min(age_days, ' + m.maturity_days + ') / ' + m.maturity_days + ' x ' + m.maturity_range + ') )',
+        'ln(mcap) = a + b · ln(TVL), fitted on ' + v.comparables + ' live-token comparables across ' + v.categories + ' categories',
         node('br', null),
-        'convexGrowth: if g >= 0 then 1 + sqrt(g) x ' + m.growth_weight + ' x 1.35; else 1 + g x ' + m.growth_weight + ' x (1 + |g|).  g = clamp(change_7d, ' + m.growth_floor + ', ' + m.growth_cap + ') / 100.'
+        'implied_value = curve(TVL) × category_multiple × growth_tilt — each multiple is the median mcap/TVL of that category\'s live tokens, shrunk toward the global median of ' + Number(v.median_multiple).toFixed(2) + '.'
       ),
-      node('p', { class: 'sub', text: 'Growth is convex: sustained expansion compounds, while contraction is discounted harder, so a shrinking protocol cannot coast on a large TVL. TVL and seven-day growth come from the snapshot. Age is the time since the protocol was first listed, the best record of how long it has run with no token; an unlisted age uses ' + m.unknown_age_days + ' days. The early radar is every pre-token protocol below the watchlist floor, by TVL, and the live-token protocols are set aside with their market caps shown.' }),
+      node('h3', { text: 'Out-of-sample checks (not self-reported fit)' }),
+      node('div', { class: 'equation' },
+        node('div', null, node('span', { text: 'Leave-one-out error (log10 mcap)' }), node('b', { class: 'num', text: Number(v.loo_mae_log).toFixed(3) + '  (~' + Math.pow(10, v.loo_mae_log).toFixed(1) + 'x)' })),
+        node('div', null, node('span', { text: 'Chronological walk-forward error' }), node('b', { class: 'num', text: Number(v.walk_mae_log).toFixed(3) })),
+        node('div', null, node('span', { text: 'Blind rank test (Spearman vs real mcap)' }), node('b', { class: 'num', text: Number(v.blind_spearman).toFixed(3) })),
+        node('div', null, node('span', { text: 'Top-20 overlap by model vs by market' }), node('b', { class: 'num', text: v.blind_top20 + ' / 20' })),
+        node('div', null, node('span', { text: 'Bootstrap refits behind rank ranges' }), node('b', { class: 'num', text: String(v.refits) }))
+      ),
+      node('p', { class: 'sub', text: v.method + '. A wide rank range means the evidence is thin — the board says so rather than hiding it. Wrapped and staked claims on an existing token are excluded from the ranking; the live-token view keeps them as the market\'s own anchors.' }),
       node('h3', { text: 'Top 5 — the arithmetic behind each value' }),
       node('div', { class: 'equation' }, radar.rows.slice(0, 5).map(function (r) {
         return node('div', null,
-          node('span', { text: '#' + r.rank + ' ' + r.name + '  ·  TVL ' + dollars(r.tvl_usd) + ' × growth ' + r.growth_multiplier + ' × maturity ' + r.maturity_multiplier }),
+          node('span', { text: '#' + r.rank + ' ' + r.name + ' · TVL ' + dollars(r.tvl_usd) + ' × ' + String(r.category || 'Other') + ' ' + Number(r.category_multiple).toFixed(2) + ' × tilt ' + Number(r.size_factor).toFixed(2) + '  [rank ' + r.rank_low + '–' + r.rank_high + ']' }),
           node('b', { class: 'num', text: '= ' + dollars(r.implied_value_usd) })
         );
-      })),
-      node('p', { class: 'sub', text: 'Each line is the same three inputs read straight from the snapshot; the implied value is their product, rounded. No name is typed into the ranking — change a TVL or a growth figure in the snapshot and the row moves on its own.' })
+      }))
     );
   }
 
@@ -323,7 +330,6 @@
     writeHash();
     drawer.textContent = '';
     var steps = planFor(row);
-    var recalc = impliedOf(row, radar.model);
     drawer.appendChild(node('div', { class: 'detail-head' },
       node('div', null,
         node('span', { class: 'brand-name', text: 'Rank ' + row.rank + ' of ' + radar.board_size }),
@@ -337,12 +343,14 @@
       node('div', { class: 'equation' },
         node('div', null, node('span', { text: 'TVL' }), node('b', { class: 'num', text: dollars(row.tvl_usd) })),
         node('div', null, node('span', { text: 'Seven-day growth' }), node('b', { class: 'num', text: percent(row.change_7d) })),
-        node('div', null, node('span', { text: 'Age with no token' }), node('b', { class: 'num', text: ageLabel(row.age_days) })),
-        node('div', null, node('span', { text: 'Growth multiplier' }), node('b', { class: 'num', text: String(row.growth_multiplier) })),
-        node('div', null, node('span', { text: 'Maturity multiplier' }), node('b', { class: 'num', text: String(row.maturity_multiplier) })),
+        node('div', null, node('span', { text: 'Category' }), node('b', { class: 'num', text: String(row.category || 'Other') })),
+        node('div', null, node('span', { text: 'Category multiple (live comps)' }), node('b', { class: 'num', text: Number(row.category_multiple).toFixed(3) })),
+        node('div', null, node('span', { text: 'Size / peer tilt' }), node('b', { class: 'num', text: Number(row.size_factor).toFixed(2) + 'x' })),
+        node('div', null, node('span', { text: 'Growth tilt' }), node('b', { class: 'num', text: Number(row.growth_multiplier).toFixed(2) + 'x' })),
+        node('div', null, node('span', { text: 'Bootstrap rank range' }), node('b', { class: 'num', text: row.rank_low + ' – ' + row.rank_high })),
         node('div', null, node('span', { text: 'Implied value' }), node('b', { class: 'num', text: dollars(row.implied_value_usd) }))
       ),
-      node('p', { class: 'sub', text: 'Model ' + radar.model_version + ': the same function scores every protocol. The page recomputes this row as ' + dollars(recalc) + (recalc === row.implied_value_usd ? ', the same number board.json carries.' : ', which differs from the board: the data would be stale.') + ' This is an estimate, not a price.' })
+      node('p', { class: 'sub', text: 'Model ' + radar.model_version + ': this value comes from the fitted curve at this TVL, tilted by the median multiple of ' + String(row.category || 'Other') + ' comparables that already trade. The rank range is from ' + (radar.validation ? radar.validation.refits : 200) + ' bootstrap refits — a wide band means the evidence is thin. An estimate, not a price.' })
     ));
     drawer.appendChild(node('section', { class: 'detail-section' },
       node('h3', { text: 'Farm plan' }),
