@@ -97,6 +97,8 @@ export interface BoardRow {
     rank_high: number;
   };
   farm_steps: string[];
+  verdict: 'farm' | 'thin' | 'skip';
+  net_usd: number;
 }
 
 export interface RadarRow {
@@ -118,6 +120,8 @@ export interface RadarRow {
   comps: number;
   rank_low: number;
   rank_high: number;
+  verdict: 'farm' | 'thin' | 'skip';
+  net_usd: number;
 }
 
 export interface LiveRow {
@@ -384,6 +388,8 @@ export function buildBoard(snapshot: Snapshot, model: ModelConstants = MODEL, fi
       rank_low: low[i], rank_high: high[i],
     },
     farm_steps: farmSteps(s.p, ageDays(snapshot.as_of, s.p.listed_at), s.implied).map(stepText),
+    verdict: netValue(s.p, s.implied).verdict,
+    net_usd: netValue(s.p, s.implied).net,
   }));
 }
 
@@ -419,19 +425,41 @@ function actionFor(p: SnapshotProtocol, capital: number, chain: string): string 
   return `Deposit $${capital} of USDC into ${name} on ${chain} and keep the position open.`;
 }
 
-/** A six-step farm plan costed to break-even, derived from the protocol's own record. */
+/**
+ * Net a farm position to a decision: farm, thin or skip. The airdrop pool is a stated assumption
+ * (0.2% of implied value shared among an assumed 500 active farmers);
+ * the cost is gas plus the time horizon. Every input is the protocol's own figure or the model's
+ * fitted value, and the assumption is printed in the plan so a reader can change it.
+ */
+export function netValue(p: SnapshotProtocol, implied: number): { verdict: 'farm' | 'thin' | 'skip'; net: number; share: number; cost: number } {
+  const capital = capitalFor(p);
+  // An early-user airdrop of 0.2% of implied value, split among an assumed 500 active farmers.
+  // Both numbers are stated in the plan so a reader can change them; no protocol name is special.
+  const pool = implied * 0.002;
+  const share = pool / 500;
+  const cost = (capital >= 150 ? 8 : 4) + 12;               // gas plus a stated 30-day upkeep allowance
+  const net = Math.round(share - cost);
+  const verdict: 'farm' | 'thin' | 'skip' = net > cost ? 'farm' : net > 0 ? 'thin' : 'skip';
+  return { verdict, net, share: Math.round(share), cost };
+}
+
+/** A six-step farm plan costed to a farm / thin / skip decision, from the protocol's own record. */
 export function farmSteps(p: SnapshotProtocol, age: number | null, implied?: number): FarmStep[] {
   const chain = chainOf(p), capital = capitalFor(p), hold = holdDaysFor(age), action = actionFor(p, capital, chain);
   const gas = capital >= 150 ? 8 : 4;
-  const be = implied !== undefined && implied > 0
-    ? `At the model's $${(implied / 1e6).toFixed(0)}M implied value, a 0.1% airdrop share would be about $${(implied * 0.001 / 1e6).toFixed(0)}M network-wide; weigh that against the $${capital} position before farming.`
-    : `Weigh any tokens received against the $${capital} position before farming.`;
+  const nv = implied !== undefined ? netValue(p, implied) : null;
+  const lead = nv
+    ? `Verdict: ${nv.verdict.toUpperCase()} — estimated airdrop share about $${nv.share} against about $${nv.cost} of gas and upkeep, net about $${nv.net}. Assumption: a 0.2% airdrop pool split among 500 active farmers. Start with a fresh wallet holding only the funds you plan to farm, and keep its seed phrase offline.`
+    : `Verdict: THIN — start with a fresh wallet holding only the funds you plan to farm, and keep its seed phrase offline.`;
+  const be = nv
+    ? `This is a ${nv.verdict} position: net about $${nv.net} under the stated 0.2%-pool / 500-farmer assumption; change that assumption in the model and the verdict moves. Check the protocol's own points page before committing more.`
+    : 'Weigh any tokens received against the position before committing more.';
   return [
-    { text: 'Use a fresh wallet that holds only the funds you plan to farm, and keep its seed phrase offline.', cost: 'under $3 of gas for the first transaction', time: '5 minutes' },
+    { text: lead, cost: 'under $3 of gas for the first transaction', time: '5 minutes' },
     { text: action, cost: `$${capital} of capital and about $${gas} of gas`, time: '15 minutes to set up' },
     { text: 'Make one qualifying action each week, such as a deposit, a borrow, a swap or a vote.', cost: 'about $2 of gas a week', time: '10 minutes a week' },
     { text: `Hold the position for at least ${hold} days so the activity is counted in more than one snapshot.`, cost: `the $${capital} stays in the position`, time: `${hold} days` },
-    { text: be, cost: 'no extra capital; this is the break-even check', time: '2 minutes to work out' },
+    { text: be, cost: 'no extra capital; this is the netted break-even check', time: '2 minutes to work out' },
     { text: "Before you withdraw, open the protocol's own points or rewards page and claim only from the link it publishes.", cost: 'no fee to check, and never pay to claim', time: '10 minutes' },
   ];
 }
@@ -452,6 +480,7 @@ export function radarRow(row: BoardRow): RadarRow {
     growth_multiplier: row.model.growth_multiplier, maturity_multiplier: row.model.maturity_multiplier,
     category_multiple: row.model.category_multiple, size_factor: row.model.size_factor, comps: row.model.comps,
     rank_low: row.model.rank_low, rank_high: row.model.rank_high,
+    verdict: row.verdict, net_usd: row.net_usd,
   };
 }
 

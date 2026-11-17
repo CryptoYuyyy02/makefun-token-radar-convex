@@ -245,7 +245,7 @@
           node('div', { class: 'bar', 'aria-hidden': 'true' }, node('i', { style: 'width:' + Math.max(3, Math.round((r.implied_value_usd / ceiling) * 100)) + '%' })),
           node('span', { class: 'num', text: dollars(r.implied_value_usd) })
         )),
-        node('td', null, node('span', { class: 'status', text: 'no token' }))
+        node('td', null, node('span', { class: 'status', style: 'color:' + (r.verdict === 'farm' ? '#35e0c0' : r.verdict === 'skip' ? '#ff5d7a' : '#ffd166'), text: r.verdict + ' · $' + r.net_usd }))
       );
       body.appendChild(row);
     });
@@ -260,7 +260,7 @@
             sortableHead('growth', '7d'),
             sortableHead('age', 'Age'),
             sortableHead('implied', 'Implied value'),
-            node('th', { scope: 'col', text: 'Token' })
+            node('th', { scope: 'col', text: 'Plan · net' })
           )),
           body
         )
@@ -310,6 +310,8 @@
         node('div', null, node('span', { text: 'Bootstrap refits behind rank ranges' }), node('b', { class: 'num', text: String(v.refits) }))
       ),
       node('p', { class: 'sub', text: v.method + '. A wide rank range means the evidence is thin — the board says so rather than hiding it. Wrapped and staked claims on an existing token are excluded from the ranking; the live-token view keeps them as the market\'s own anchors.' }),
+      node('h3', { text: 'Every row is netted: farm, thin or skip' }),
+      node('p', { class: 'sub', text: 'A plan is only useful if it says whether to act. Each row estimates an early-user airdrop at 0.2% of its implied value shared among 500 active farmers, subtracts gas and a 30-day upkeep allowance, and labels the position farm (net above cost), thin (net positive) or skip (net negative). The Plan column shows that net in dollars; the assumption is printed in every farm plan so a reader can change it and the verdict moves with it.' }),
       node('h3', { text: 'Top 5 — the arithmetic behind each value' }),
       node('div', { class: 'equation' }, radar.rows.slice(0, 5).map(function (r) {
         return node('div', null,
