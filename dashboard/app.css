@@ -1,13 +1,18 @@
-/* Token Radar's plain theme. The five palette values, two radii and two families are the whole style;
-   everything else is spacing, a hairline and a type step. */
+/* Starfall Radar theme: a dark, high-contrast analyst terminal. Only palette, radii and type are
+   declared as tokens; everything below is spacing, a hairline, and one type step. Class names are
+   stable so the page's rendering code needs no changes to adopt this skin. */
 :root {
-  --canvas: #f2f5f3;
-  --surface: #ffffff;
-  --ink: #16211c;
-  --muted: #5f6f67;
-  --border: #d8e2dc;
-  --accent: #0f7a5a;
-  --negative: #b23b2e;
+  --canvas: #070c17;
+  --surface: #101a2c;
+  --surface-2: #142036;
+  --ink: #e8f1ff;
+  --muted: #8ba3c4;
+  --border: #22344f;
+  --accent: #35e0c0;
+  --accent-soft: rgba(53, 224, 192, 0.12);
+  --negative: #ff5d7a;
+  --positive: #35e0c0;
+  --gold: #ffd166;
   --radius-control: 8px;
   --radius-panel: 14px;
   --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -22,16 +27,19 @@
 }
 
 * { box-sizing: border-box; }
-html { color-scheme: light; }
+html { color-scheme: dark; }
 body {
   margin: 0;
-  background: var(--canvas);
+  background:
+    radial-gradient(1100px 520px at 12% -8%, rgba(53, 224, 192, 0.08), transparent 60%),
+    radial-gradient(900px 420px at 100% 0%, rgba(255, 209, 102, 0.05), transparent 55%),
+    var(--canvas);
   color: var(--ink);
   font: 400 15px/1.5 var(--font-body);
   text-wrap: pretty;
 }
 h1, h2, h3 { margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
-h1 { font-size: 30px; line-height: 1.15; font-weight: 600; }
+h1 { font-size: 30px; line-height: 1.15; font-weight: 650; }
 h2 { font-size: 20px; line-height: 1.2; font-weight: 600; }
 h3 { font-size: 16px; line-height: 1.25; font-weight: 600; }
 p { margin: 0; }
@@ -51,75 +59,87 @@ a { color: var(--accent); }
   padding-bottom: var(--step-4); border-bottom: 1px solid var(--border);
 }
 .brand { display: flex; align-items: center; gap: var(--step-3); }
-.mark { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); flex: none; }
-.brand-name { font-family: var(--font-num); font-size: 13px; letter-spacing: 0.02em; color: var(--muted); }
+.mark {
+  width: 12px; height: 12px; border-radius: 50%; flex: none;
+  background: var(--accent); box-shadow: 0 0 14px var(--accent);
+}
+.brand-name { font-family: var(--font-num); font-size: 13px; letter-spacing: 0.06em; color: var(--accent); }
 .top-meta { display: flex; flex-wrap: wrap; gap: var(--step-3); justify-content: flex-end; color: var(--muted); font-size: 13px; }
 .top-meta span { white-space: nowrap; }
 .lede { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr); gap: var(--step-6); padding: var(--step-6) 0 var(--step-5); }
 .lede p { color: var(--muted); max-width: 62ch; margin-top: var(--step-2); }
-.facts { display: grid; gap: var(--step-2); align-content: start; border-left: 1px solid var(--border); padding-left: var(--step-5); }
+.facts {
+  display: grid; gap: var(--step-2); align-content: start;
+  border-left: 1px solid var(--border); padding-left: var(--step-5);
+  background: linear-gradient(90deg, var(--accent-soft), transparent 40%);
+}
 .fact { display: flex; align-items: baseline; justify-content: space-between; gap: var(--step-3); }
-.fact b { font-family: var(--font-num); font-size: 15px; font-weight: 500; }
+.fact b { font-family: var(--font-num); font-size: 15px; font-weight: 600; color: var(--ink); }
 .fact span { color: var(--muted); font-size: 13px; }
 
 .controls { display: flex; flex-wrap: wrap; align-items: end; gap: var(--step-3); padding: var(--step-4) 0; border-top: 1px solid var(--border); }
 .field { display: grid; gap: var(--step-1); }
-.field label { color: var(--muted); font-size: 12px; }
+.field label { color: var(--muted); font-size: 12px; letter-spacing: 0.02em; }
 .field input, .field select {
   min-height: 36px; padding: 0 var(--step-3); border: 1px solid var(--border); border-radius: var(--radius-control);
-  background: var(--surface); min-width: 180px;
+  background: var(--surface-2); color: var(--ink); min-width: 180px;
 }
 .field input { min-width: 280px; }
-.tabs { display: flex; gap: var(--step-1); padding: 3px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); }
+.field input::placeholder { color: var(--muted); }
+.tabs { display: flex; gap: var(--step-1); padding: 3px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-2); }
 .tabs button { min-height: 30px; padding: 0 var(--step-3); border: 0; border-radius: 6px; background: transparent; color: var(--muted); }
-.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.tabs button[aria-pressed="true"] { background: var(--accent); color: #04201b; font-weight: 600; }
 .count { margin-left: auto; color: var(--muted); font-size: 13px; align-self: center; }
 
-.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-panel); overflow: hidden; }
+.panel {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border); border-radius: var(--radius-panel); overflow: hidden;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { padding: var(--step-3) var(--step-3); border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
-th { color: var(--muted); font-size: 12px; font-weight: 500; white-space: nowrap; }
+th { color: var(--muted); font-size: 12px; font-weight: 500; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em; }
 th button { display: inline-flex; align-items: center; gap: var(--step-1); border: 0; background: none; padding: 0; color: inherit; font: inherit; }
-th button:hover { color: var(--ink); }
+th button:hover { color: var(--accent); }
 tbody tr { cursor: pointer; }
-tbody tr:hover { background: var(--surface); }
-tbody tr[data-selected="true"] { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+tbody tr:hover { background: var(--accent-soft); }
+tbody tr[data-selected="true"] { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
 .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .name { display: grid; gap: 2px; }
-.name b { font-weight: 600; }
+.name b { font-weight: 650; }
 .sub { color: var(--muted); font-size: 12px; }
-.pos { color: var(--accent); }
+.pos { color: var(--positive); }
 .neg { color: var(--negative); }
-.bar { width: 120px; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--border) 60%, var(--surface)); overflow: hidden; }
-.bar i { display: block; height: 100%; background: var(--accent); }
+.bar { width: 120px; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); }
 .implied { display: flex; align-items: center; gap: var(--step-2); }
 .status { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; white-space: nowrap; }
-.status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
 
-.model { margin-top: var(--step-4); padding: var(--step-5); display: grid; gap: var(--step-3); }
+.model { margin-top: var(--step-4); padding: var(--step-5); display: grid; gap: var(--step-3); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-panel); }
 .formula { font-family: var(--font-num); font-size: 13px; line-height: 1.7; color: var(--muted); overflow-wrap: anywhere; }
 .empty { padding: var(--step-7) var(--step-5); text-align: center; display: grid; gap: var(--step-3); justify-items: center; }
 .empty p { color: var(--muted); }
-.button { min-height: 36px; padding: 0 var(--step-4); border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); }
-.button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.button { min-height: 36px; padding: 0 var(--step-4); border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-2); color: var(--ink); }
+.button.primary { background: var(--accent); border-color: var(--accent); color: #04201b; font-weight: 600; }
 
 .detail {
   position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 92vw); z-index: 10;
-  background: var(--surface); border-left: 1px solid var(--border); padding: var(--step-5);
-  overflow-y: auto; transform: translateX(0); transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface)); border-left: 1px solid var(--accent);
+  padding: var(--step-5); overflow-y: auto; margin: 0 0 0 auto; max-height: 100%;
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
 }
 .detail[hidden] { display: none; }
-.detail { margin: 0 0 0 auto; max-height: 100%; }
-.detail::backdrop { background: rgba(22, 33, 28, 0.28); }
+.detail::backdrop { background: rgba(4, 10, 20, 0.6); backdrop-filter: blur(2px); }
 .detail-head { display: flex; align-items: start; justify-content: space-between; gap: var(--step-4); }
 .detail-head > div { min-width: 0; }
 .detail-head .sub { overflow-wrap: anywhere; }
-.close { flex: none; min-width: 32px; min-height: 32px; padding: 0 var(--step-2); white-space: nowrap; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); }
+.close { flex: none; min-width: 32px; min-height: 32px; padding: 0 var(--step-2); white-space: nowrap; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-2); color: var(--ink); }
 .detail h2 { margin-top: var(--step-1); }
 .detail .sub { margin-top: var(--step-1); }
 .detail-section { margin-top: var(--step-5); padding-top: var(--step-4); border-top: 1px solid var(--border); }
-.detail-section h3 { margin-bottom: var(--step-2); }
+.detail-section h3 { margin-bottom: var(--step-2); color: var(--accent); }
 .equation { display: grid; gap: var(--step-2); font-family: var(--font-num); font-size: 13px; }
 .equation div { display: flex; justify-content: space-between; gap: var(--step-3); }
 .equation span { color: var(--muted); }
