@@ -160,6 +160,8 @@ export interface RadarData {
   rows: RadarRow[];
   live: LiveRow[];
   validation: Validation;
+  /** The live-token anchors, in full, so the page can refit the model itself and prove it. */
+  anchors: Array<{ s: string; n: string; c: string | null; t: number; m: number }>;
 }
 
 export class SnapshotError extends Error {
@@ -494,6 +496,10 @@ export function buildRadar(snapshot: Snapshot, model: ModelConstants = MODEL): {
     model, model_version: MODEL_VERSION, watchlist_size: snapshot.watchlist.length,
     board_size: board.length, early_size: early, live_size: live.length,
     rows: board.map(radarRow), live, validation: fit.validation,
+    // The comparable anchors in full (slug, name, category, tvl, mcap) so a reader's page can refit.
+    anchors: snapshot.protocols.filter(isComparable).map((p) => ({
+      s: p.slug, n: p.name, c: p.category, t: p.tvl_usd, m: p.mcap_usd!,
+    })),
   };
   return { board, radar };
 }

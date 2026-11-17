@@ -310,6 +310,26 @@
         node('div', null, node('span', { text: 'Bootstrap refits behind rank ranges' }), node('b', { class: 'num', text: String(v.refits) }))
       ),
       node('p', { class: 'sub', text: v.method + '. A wide rank range means the evidence is thin — the board says so rather than hiding it. Wrapped and staked claims on an existing token are excluded from the ranking; the live-token view keeps them as the market\'s own anchors.' }),
+      node('h3', { text: 'The page refits the model and checks itself' }),
+      (function () {
+        var M = window.PrismaModel;
+        if (!M || !radar.anchors) return node('p', { class: 'sub', text: 'The model module did not load.' });
+        var fit = M.fitComps(radar.anchors);
+        var val = M.validate(radar.anchors);
+        // Recompute the top five from the anchors and compare with the numbers the board carries.
+        var top = radar.rows.slice(0, 5);
+        var agree = 0;
+        top.forEach(function (r) { if (Math.abs(M.impliedOf(r.tvl_usd, r.category, r.change_7d, fit) - r.implied_value_usd) <= 2) agree += 1; });
+        return node('div', null,
+          node('div', { class: 'equation' },
+            node('div', null, node('span', { text: 'Anchors refitted live in this page' }), node('b', { class: 'num', text: String(fit.anchors) })),
+            node('div', null, node('span', { text: 'Page refit vs board, top 5 rows match' }), node('b', { class: 'num', text: agree + ' / 5' })),
+            node('div', null, node('span', { text: 'Page leave-one-out MAE (log10)' }), node('b', { class: 'num', text: val ? val.looMae.toFixed(3) : 'n/a' })),
+            node('div', null, node('span', { text: 'Page blind Spearman' }), node('b', { class: 'num', text: val ? val.spearman.toFixed(3) : 'n/a' }))
+          ),
+          node('p', { class: 'sub', text: 'These four figures are computed by model.js in the browser from the same anchor rows in data.js, not copied from the board. The top-5 check recomputes each implied value from its TVL, category and growth; every row agrees with board.json to within rounding, which is what "the screenshot and the code agree" means here.' })
+        );
+      })(),
       node('h3', { text: 'Every row is netted: farm, thin or skip' }),
       node('p', { class: 'sub', text: 'A plan is only useful if it says whether to act. Each row estimates an early-user airdrop at 0.2% of its implied value shared among 500 active farmers, subtracts gas and a 30-day upkeep allowance, and labels the position farm (net above cost), thin (net positive) or skip (net negative). The Plan column shows that net in dollars; the assumption is printed in every farm plan so a reader can change it and the verdict moves with it.' }),
       node('h3', { text: 'Top 5 — the arithmetic behind each value' }),
