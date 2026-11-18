@@ -332,6 +332,52 @@
           node('p', { class: 'sub', text: 'These four figures are computed by model.js in the browser from the same anchor rows in data.js, not copied from the board. The top-5 check recomputes each implied value from its TVL, category and growth; every row agrees with board.json to within rounding, which is what "the screenshot and the code agree" means here.' })
         );
       })(),
+      node('h3', { text: 'Predicted against actual, every anchor held out in turn' }),
+      (function () {
+        var M = window.PrismaModel;
+        var val = M && radar.anchors ? M.validate(radar.anchors) : null;
+        if (!val || !val.points || !val.points.length) return node('p', { class: 'sub', text: 'The scatter needs at least five anchors.' });
+        var W = 640, H = 300, pad = 34;
+        var canvas = node('canvas', { class: 'scatter', width: String(W), height: String(H) });
+        // Draw on the next frame, once the canvas is in the document.
+        requestAnimationFrame(function () {
+          var ctx = canvas.getContext('2d');
+          var pts = val.points;
+          var lo = Infinity, hi = -Infinity;
+          pts.forEach(function (q) { lo = Math.min(lo, q.a, q.p); hi = Math.max(hi, q.a, q.p); });
+          lo = Math.floor(lo); hi = Math.ceil(hi);
+          var sx = function (v) { return pad + ((v - lo) / (hi - lo)) * (W - pad * 2); };
+          var sy = function (v) { return H - pad - ((v - lo) / (hi - lo)) * (H - pad * 2); };
+          ctx.fillStyle = '#0b1120'; ctx.fillRect(0, 0, W, H);
+          // grid
+          ctx.strokeStyle = 'rgba(80,110,160,0.25)'; ctx.lineWidth = 1;
+          for (var g = lo; g <= hi; g++) {
+            ctx.beginPath(); ctx.moveTo(sx(g), sy(lo)); ctx.lineTo(sx(g), sy(hi)); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(sx(lo), sy(g)); ctx.lineTo(sx(hi), sy(g)); ctx.stroke();
+          }
+          // 45-degree line: where a perfect prediction would sit
+          ctx.strokeStyle = 'rgba(79,245,255,0.5)'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+          ctx.beginPath(); ctx.moveTo(sx(lo), sy(lo)); ctx.lineTo(sx(hi), sy(hi)); ctx.stroke();
+          ctx.setLineDash([]);
+          // points
+          pts.forEach(function (q) {
+            var d = Math.abs(q.a - q.p);
+            ctx.fillStyle = d < 0.35 ? '#35e0c0' : d < 0.8 ? '#ffd166' : '#ff5d7a';
+            ctx.globalAlpha = 0.85;
+            ctx.beginPath(); ctx.arc(sx(q.a), sy(q.p), 3.4, 0, Math.PI * 2); ctx.fill();
+          });
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#a8b8d8'; ctx.font = '12px system-ui, sans-serif';
+          ctx.fillText('actual log10 mcap →', W / 2 - 50, H - 8);
+          ctx.save(); ctx.translate(12, H / 2 + 40); ctx.rotate(-Math.PI / 2);
+          ctx.fillText('predicted →', 0, 0); ctx.restore();
+          ctx.fillStyle = '#d8e6ff';
+          ctx.fillText('n = ' + pts.length + '   MAE = ' + val.looMae.toFixed(3), pad, pad - 12);
+        });
+        return node('div', null, canvas,
+          node('p', { class: 'sub', text: 'One dot per live-token anchor, each predicted after being held out of the fit. Green sits within 0.35 of the true value (about 2.2x), amber within 0.8, red beyond. The dashed cyan line is a perfect prediction; the cloud tightening around it is what the model actually achieves, and the colours are the honest spread rather than a single best-fit number.' })
+        );
+      })(),
       node('h3', { text: 'What the market pays per dollar of TVL, by category' }),
       (function () {
         var cats = radar.categories || [];

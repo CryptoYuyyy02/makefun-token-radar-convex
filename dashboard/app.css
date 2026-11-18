@@ -167,3 +167,7 @@ tbody tr[data-selected="true"] { background: color-mix(in srgb, var(--accent) 14
 .bar-fill { display: block; height: 100%; border-radius: 7px; }
 .bar-val { font-size: 13px; color: #d8e6ff; text-align: right; font-variant-numeric: tabular-nums; }
 @media (max-width: 720px) { .bar-row { grid-template-columns: 120px 1fr 56px; } }
+
+/* The held-out scatter: a canvas sized to the panel, with a dark plot area so the dots and the
+   dashed perfect-prediction line read at a glance. */
+.scatter { width: 100%; max-width: 640px; height: auto; display: block; margin: 8px 0 6px; border-radius: 10px; border: 1px solid #24314d; }

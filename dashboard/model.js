@@ -89,11 +89,15 @@
     }
     if (rows.length < 5) return null;
     var ae = 0;
+    var points = [];
     for (var h = 0; h < rows.length; h++) {
       var train = rows.filter(function (_, idx) { return idx !== h; });
       var f = fitComps(train);
       var pred = Math.log10(impliedOf(rows[h].t, rows[h].c, 0, f));
-      ae += Math.abs(Math.log10(rows[h].m) - pred);
+      var actual = Math.log10(rows[h].m);
+      ae += Math.abs(actual - pred);
+      // One held-out prediction, for the scatter the page draws: actual on x, predicted on y.
+      points.push({ a: actual, p: pred });
     }
     // Spearman between the model's implied order and the real mcap order.
     function ranks(v) {
@@ -113,7 +117,7 @@
     var full = fitComps(rows);
     var modelOrder = ranks(rows.map(function (r) { return impliedOf(r.t, r.c, 0, full); }));
     var realOrder = ranks(rows.map(function (r) { return r.m; }));
-    return { n: rows.length, looMae: ae / rows.length, spearman: pearson(modelOrder, realOrder) };
+    return { n: rows.length, looMae: ae / rows.length, spearman: pearson(modelOrder, realOrder), points: points };
   }
 
   root.PrismaModel = { median: median, fitComps: fitComps, impliedOf: impliedOf, netValue: netValue, validate: validate };
