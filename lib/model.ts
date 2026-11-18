@@ -162,6 +162,8 @@ export interface RadarData {
   validation: Validation;
   /** The live-token anchors, in full, so the page can refit the model itself and prove it. */
   anchors: Array<{ s: string; n: string; c: string | null; t: number; m: number }>;
+  /** Each category's fitted multiple and how many anchors it rests on, for the bar chart. */
+  categories: Array<{ c: string; m: number; n: number }>;
 }
 
 export class SnapshotError extends Error {
@@ -214,6 +216,7 @@ function median(nums: number[]): number {
 
 interface Fit {
   category: Record<string, number>;
+  categoryCount: Record<string, number>;
   globalMedian: number;
   sizeSlope: number;
   intercept: number;
@@ -250,11 +253,13 @@ function fitModel(snapshot: Snapshot): Fit {
   const globalMedian = median(comps.map((p) => p.mcap_usd! / p.tvl_usd)) || MODEL.base_multiple;
   // Shrink small categories toward the global anchor: one anchor is not strong evidence.
   const category: Record<string, number> = {};
+  const categoryCount: Record<string, number> = {};
   for (const [c, arr] of byCategory) {
     const w = arr.length / (arr.length + 3);
     // Clip: a single outlier comparable must not produce a 100x multiple for a whole category.
     const m = Math.max(0.02, Math.min(3, median(arr)));
     category[c] = Math.max(0.02, Math.min(3, w * m + (1 - w) * globalMedian));
+    categoryCount[c] = arr.length;
   }
 
   // Fit ln(mcap) = intercept + slope * ln(TVL) on the anchors. TVL is the only figure with a
@@ -298,7 +303,7 @@ function fitModel(snapshot: Snapshot): Fit {
   const blindTop20 = [...comps].sort((a, b) => b.tvl_usd - a.tvl_usd).slice(0, 20).filter((p) => trueTop.has(p.slug)).length;
 
   return {
-    category, globalMedian, sizeSlope: slope, intercept,
+    category, categoryCount, globalMedian, sizeSlope: slope, intercept,
     validation: {
       comparables: comps.length, categories: byCategory.size,
       loo_mae_log: looMae, walk_mae_log: walkMae,
@@ -500,6 +505,12 @@ export function buildRadar(snapshot: Snapshot, model: ModelConstants = MODEL): {
     anchors: snapshot.protocols.filter(isComparable).map((p) => ({
       s: p.slug, n: p.name, c: p.category, t: p.tvl_usd, m: p.mcap_usd!,
     })),
+    // Each category's multiple with its anchor count, sorted strongest first, for the bar chart.
+    categories: Object.keys(fit.category)
+      .map((c) => ({ c, m: fit.category[c]!, n: fit.categoryCount[c] || 0 }))
+      .filter((x) => x.n >= 3)
+      .sort((a, b) => b.m - a.m)
+      .slice(0, 12),
   };
   return { board, radar };
 }

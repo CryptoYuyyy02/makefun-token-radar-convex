@@ -295,7 +295,7 @@
 
   function modelPanel() {
     var m = radar.model, v = radar.validation || {};
-    return node('section', { class: 'panel model' },
+    return node('section', { class: 'panel model', id: 'model' },
       node('h2', { text: 'The model: comparables, fitted and tested' }),
       node('p', { class: 'sub', text: 'Implied value is not guessed. It is fitted on the ' + v.comparables + ' protocols in this very snapshot that already have a trading token, then applied to those that have none. No name is typed into the ranking.' }),
       node('div', { class: 'formula' },
@@ -332,6 +332,24 @@
           node('p', { class: 'sub', text: 'These four figures are computed by model.js in the browser from the same anchor rows in data.js, not copied from the board. The top-5 check recomputes each implied value from its TVL, category and growth; every row agrees with board.json to within rounding, which is what "the screenshot and the code agree" means here.' })
         );
       })(),
+      node('h3', { text: 'What the market pays per dollar of TVL, by category' }),
+      (function () {
+        var cats = radar.categories || [];
+        if (!cats.length) return node('p', { class: 'sub', text: 'No category had enough anchors to chart.' });
+        var max = cats[0].m;
+        return node('div', { class: 'bars' }, cats.map(function (x) {
+          return node('div', { class: 'bar-row' },
+            node('span', { class: 'bar-label', text: x.c + ' (' + x.n + ')' }),
+            node('span', { class: 'bar-track' }, node('span', {
+              class: 'bar-fill',
+              style: 'width:' + Math.max(2, Math.round((x.m / max) * 100)) + '%;' +
+                'background:linear-gradient(90deg,#35e0c0,#4ff5ff)',
+            })),
+            node('b', { class: 'bar-val', text: x.m.toFixed(2) + 'x' })
+          );
+        }));
+      })(),
+      node('p', { class: 'sub', text: 'Each bar is one category\'s median mcap/TVL over its live-token comparables, shrunk toward the ' + Number(radar.validation ? radar.validation.median_multiple : 0.2).toFixed(2) + 'x global anchor by sample size. This is the whole value model in one picture: a bridge is paid more per dollar of TVL than a lending desk, and the board applies exactly these multiples.' }),
       node('h3', { text: 'Every row is netted: farm, thin or skip' }),
       node('p', { class: 'sub', text: 'A plan is only useful if it says whether to act. Each row estimates an early-user airdrop at 0.2% of its implied value shared among 500 active farmers, subtracts gas and a 30-day upkeep allowance, and labels the position farm (net above cost), thin (net positive) or skip (net negative). The Plan column shows that net in dollars; the assumption is printed in every farm plan so a reader can change it and the verdict moves with it.' }),
       node('h3', { text: 'Top 5 — the arithmetic behind each value' }),
