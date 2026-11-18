@@ -179,8 +179,10 @@
       node('div', { class: 'facts' },
         node('div', { class: 'fact' }, node('span', { text: 'Watchlist covered' }), node('b', { text: radar.watchlist_size + ' / ' + radar.watchlist_size })),
         node('div', { class: 'fact' }, node('span', { text: 'Pre-token rows scored' }), node('b', { text: String(radar.board_size) })),
-        node('div', { class: 'fact' }, node('span', { text: 'Early rows below the floor' }), node('b', { text: String(radar.early_size) })),
-        node('div', { class: 'fact' }, node('span', { text: 'Live-token protocols set aside' }), node('b', { text: String(radar.live_size) }))
+        node('div', { class: 'fact' }, node('span', { text: 'Live anchors fitted' }), node('b', { text: String(radar.validation ? radar.validation.comparables : '—') })),
+        node('div', { class: 'fact' }, node('span', { text: 'Blind rank test (Spearman)' }), node('b', { text: radar.validation ? Number(radar.validation.blind_spearman).toFixed(2) : '—' })),
+        node('div', { class: 'fact' }, node('span', { text: 'Leave-one-out error' }), node('b', { text: radar.validation ? '~' + Math.pow(10, radar.validation.loo_mae_log).toFixed(1) + 'x' : '—' })),
+        node('div', { class: 'fact' }, node('span', { text: 'Plans netted farm / thin / skip' }), node('b', { text: (function () { var f = 0, t = 0, s = 0; for (var i = 0; i < radar.rows.length; i++) { var v = radar.rows[i].verdict; if (v === 'farm') f++; else if (v === 'thin') t++; else s++; } return f + ' / ' + t + ' / ' + s; })() }))
       )
     );
   }
